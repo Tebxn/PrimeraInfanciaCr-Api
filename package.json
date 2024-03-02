@@ -1,0 +1,19 @@
+{
+  "name": "primerainfanciacr-api",
+  "version": "1.0.0",
+  "description": "PrimeraInfanciaCr Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "NODE_ENV=node server",
+    "dev": "nodemon server"
+  },
+  "author": "Esteban Sanchez",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
