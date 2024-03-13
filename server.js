@@ -1,11 +1,56 @@
-const express= require('express');
+const express = require('express');
 const dotenv = require('dotenv');
+const morgan = require('morgan');
+const colors = require('colors');
+const cookieParser=require('cookie-parser');
+const errorHandler = require('./middleware/error');
+const connectDB = require('./config/db');
+
 
 // Load env vars
-dotenv.config({path: './config/config.env'});
+dotenv.config({ path: './config/config.env' });
+
+//  Connect to database
+try {
+    connectDB();
+} catch (err) {
+    console.error(`Error connecting to the database: ${err.message}`);
+    process.exit(1);
+}
+
+// Route files
+const resources = require('./routes/resources');
+const auth = require('./routes/auth');
 
 const app = express();
 
+// Body parser
+app.use(express.json());
+
+// Cookie parser
+app.use(cookieParser());
+
+// Dev logging middleware
+app.use(morgan('dev'));
+
+// Mount routes
+app.use('/api/v1/resources', resources);
+app.use('/api/v1/auth', auth);
+
+// Error handler
+app.use(errorHandler);
+
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
+const server = app.listen(
+    PORT,
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow)
+);
+
+//  Handle unhandled rejections
+process.on('unhandledRejection', (err, promise) => {
+    console.error(`Error: ${err.message}`);
+    //  Close server & exit process
+    server.close(() => process.exit(1));
+});
