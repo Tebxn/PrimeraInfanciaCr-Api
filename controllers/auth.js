@@ -1,7 +1,9 @@
 const ErrorResponse = require('../utils/errorResponse');
 const User = require('../models/User');
-const Tools = require('../utils/jwt');
 const Jwt = require('../utils/jwt');
+const Bcrypt = require('../utils/bcrypt');
+const Crypto = require('../utils/crypto');
+const sendEmail = require('../utils/sendEmail');
 
 // @desc    Register user
 // @route   GET /api/v1/auth/register
@@ -11,21 +13,18 @@ exports.register = async (req, res, next) => {
         const { name, email, password, role } = req.body;
 
         // Encriptar la contraseña
-        const encryptedPassword = await Tools.encryptPassword(password);
+        const encryptedPassword = await Bcrypt.encryptPassword(password); // 10 es el número de rondas de hashing
 
         // Crear Usuario con la contraseña encriptada
-        User.register({ name, email, password, role }, encryptedPassword, (err, result) => {
-            if (err) {
-                console.error('Error registering user: ' + err);
-                return res.status(500).json({ success: false, error: 'Server error' });
-            }
-            res.status(200).json({ success: true, data: result });
-        });
+        await User.register({ name, email, password, role }, encryptedPassword);
+
+        res.status(200).json({ success: true, data: req.body }); // Aquí se utiliza req.body en lugar de result
     } catch (error) {
         console.error('Error registering user: ' + error);
-        return next(error);
+        return res.status(500).json({ success: false, error: 'Server error' });
     }
 };
+
 
 // @desc    Login user
 // @route   GET /api/v1/auth/login
@@ -38,17 +37,69 @@ exports.login = async (req, res, next) => {
             return next(new ErrorResponse('Please provide an email and password', 400));
         }
 
-        User.login(email, password, async (err, result, userId) => { // Cambiado el uso de User.login y los parámetros de entrada
-            if (!result) {
-                return next(new ErrorResponse('Invalid Credentials', 401));
-            }
+        const result = await User.login(email, password); // Usar await para obtener el resultado de User.login
 
-            const payload = { userId };
-            await sendTokenResponse(payload, 200, res);
-        });
+        if (!result) {
+            return next(new ErrorResponse('Invalid Credentials', 401));
+        }
+
+        const payload = { userId: result.idUsers }; // Asumiendo que `result` tiene una propiedad `idUsers` que representa el ID del usuario
+        await sendTokenResponse(payload, 200, res);
     } catch (error) {
         console.error('Login Error: ' + error);
         return next(error);
+    }
+};
+
+// @desc    Login user
+// @route   GET /api/v1/auth/login
+// @access  Public
+exports.getMe = async (req, res, next) => {
+    try {
+        const result = await User.getMe(req.user.idUsers);
+        res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        console.error('Error getting profile: ' + error);
+        return res.status(500).json({ success: false, error: 'Server error' });
+    }
+};
+
+// @desc    Forgot Password
+// @route   GET /api/v1/auth/forgotpassword
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+    try {
+        const resourceData = req.body;
+
+        // Obtener el usuario por su correo electrónico
+        const user = await User.findByEmail(resourceData.email);
+
+        if (!user) {
+            return next(new ErrorResponse('There is no user with that email', 404));
+        }
+
+        // Generar el token de contraseña
+        const passwordToken = Crypto.getPasswordToken();
+
+        // Actualizar el token de contraseña en la base de datos
+        const updatedUser = await User.forgotPassword(resourceData.email, passwordToken);
+
+        if (!updatedUser) {
+            return next(new ErrorResponse('Failed to update password token', 500));
+        }
+
+        // Enviar el correo electrónico de recuperación de contraseña
+        const message = `Has recibido este mensaje debido a que has solicitado el acceso a tu cuenta o cambiar tu contraseña. Por favor ingresa el siguiente codigo de activacion: ${passwordToken}`;
+        await sendEmail({
+            email: user.email,
+            subject: 'Codigo de verificacion de cuenta',
+            message
+        });
+
+        res.status(200).json({ success: true, data: 'Email Sent' });
+    } catch (error) {
+        console.error('Error resetting password: ' + error);
+        return next(new ErrorResponse('Failed to reset password', 500));
     }
 };
 
@@ -76,24 +127,6 @@ const sendTokenResponse = async (payload, statusCode, res) => {
     } catch (error) {
         console.error('Error generating JWT: ', error);
         res.status(500).json({ success: false, error: 'Server error' });
-    }
-};
-
-// @desc    Login user
-// @route   GET /api/v1/auth/login
-// @access  Public
-exports.getMe = async (req, res, next) => {
-    try {
-        User.getMe(req.user.idUsers, (err, result) => {
-            if (err) {
-                console.error('Error getting profile: ' + err);
-                return res.status(500).json({ success: false, error: 'Server error' });
-            }
-            res.status(200).json({ success: true, data: result });
-        });
-    } catch (error) {
-        console.error('Error getting profile: ' + error);
-        return next(error);
     }
 };
 
