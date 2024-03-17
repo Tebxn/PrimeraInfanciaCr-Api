@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('../utils/bcrypt');
 const crypto = require('../utils/crypto');
 const { promisify } = require('util');
 
@@ -21,7 +21,7 @@ const User = {
   login: (email, password) => {
     return new Promise((resolve, reject) => {
       const connection = db();
-      connection.query('SELECT idUsers, name, email, password, role FROM users WHERE email = ?', email, (error, results) => {
+      connection.query('SELECT idUsers, name, email, password, role FROM users WHERE email = ?', email, async (error, results) => {
         if (error) {
           reject(error);
         } else {
@@ -29,13 +29,16 @@ const User = {
             resolve(null);
           } else {
             const user = results[0];
-            bcrypt.compare(password, user.password, (err, isMatch) => {
-              if (err || !isMatch) {
-                resolve(null);
-              } else {
+            try {
+              const isMatch = await bcrypt.matchPassword(password, user.password);
+              if (isMatch) {
                 resolve(user);
+              } else {
+                resolve(null);
               }
-            });
+            } catch (error) {
+              reject(error);
+            }
           }
         }
       });
@@ -90,6 +93,36 @@ const User = {
           reject(error);
         } else {
           resolve(results.affectedRows === 0 ? null : { email, passwordToken, passwordTokenExpiration });
+        }
+      });
+    });
+  },
+  changePassword: async (email, newPassword) => {
+    try {
+        const hashPassword = await bcrypt.encryptPassword(newPassword); 
+
+        if (!hashPassword) {
+            throw new Error('Hashed password is empty');
+        }
+
+        const connection = db();
+        const results = await connection.query('UPDATE users SET password = ? WHERE email = ?', [hashPassword, email]);
+        
+        return results.affectedRows === 0 ? null : results;
+    } catch (error) {
+        throw error;
+    }
+},
+
+  getPasswordToken: (email) => {
+    return new Promise((resolve, reject) => {
+      const passwordTokenExpiration = crypto.getPasswordTokenExpiration();
+      const connection = db();
+      connection.query('SELECT passwordToken, passwordTokenExpiration FROM users WHERE email = ?', [email], (error, results) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results.affectedRows === 0 ? null : { passwordToken, passwordTokenExpiration });
         }
       });
     });

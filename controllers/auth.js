@@ -103,6 +103,45 @@ exports.forgotPassword = async (req, res, next) => {
     }
 };
 
+// @desc    Change Password
+// @route   put /api/v1/auth/changePassword
+// @access  Public
+exports.changePassword = async (req, res, next) => {
+    try {
+        const { email, password, passwordToken } = req.body;
+        console.log(passwordToken);
+        
+        if (!email || !password || !passwordToken) {
+            return next(new ErrorResponse('Please provide an email, password, and activation code', 400));
+        }
+
+        const user = await User.findByEmail(email);
+
+        if (!user) {
+            return next(new ErrorResponse('There is no user with that email', 404));
+        }
+
+        if (passwordToken !== user.passwordToken) {
+            return next(new ErrorResponse('Activation code: Not valid', 401));
+        }
+
+        if (new Date(user.passwordToken) > new Date()) {
+            return next(new ErrorResponse('Activation code: Valid time passed', 401));
+        }
+
+        await User.changePassword(email, password);
+
+        res.status(200).json({ success: true, data: 'Password changed' });
+    } catch (error) {
+        console.error('Error resetting password: ', error);
+        return next(new ErrorResponse('Failed to reset password', 500));
+    }
+};
+
+
+
+
+
 // Get token from model, create cookie and send response
 const sendTokenResponse = async (payload, statusCode, res) => {
     try {
@@ -129,5 +168,4 @@ const sendTokenResponse = async (payload, statusCode, res) => {
         res.status(500).json({ success: false, error: 'Server error' });
     }
 };
-
   
