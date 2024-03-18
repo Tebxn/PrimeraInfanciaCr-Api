@@ -51,9 +51,9 @@ exports.login = async (req, res, next) => {
     }
 };
 
-// @desc    Login user
-// @route   GET /api/v1/auth/login
-// @access  Public
+// @desc    Get profile
+// @route   GET /api/v1/auth/getMe
+// @access  Private
 exports.getMe = async (req, res, next) => {
     try {
         const result = await User.getMe(req.user.idUsers);

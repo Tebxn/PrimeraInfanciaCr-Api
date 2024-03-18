@@ -21,6 +21,7 @@ try {
 // Route files
 const resources = require('./routes/resources');
 const auth = require('./routes/auth');
+const user = require('./routes/user');
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use(morgan('dev'));
 // Mount routes
 app.use('/api/v1/resources', resources);
 app.use('/api/v1/auth', auth);
+app.use('/api/v1/user', user);
 
 // Error handler
 app.use(errorHandler);
