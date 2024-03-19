@@ -48,7 +48,7 @@ const User = {
   findById: (idUser) => {
     return new Promise((resolve, reject) => {
       const connection = db();
-      connection.query('SELECT * FROM users WHERE idUsers = ?', idUser, (error, results) => {
+      connection.query('SELECT idUsers, name, email, role FROM users WHERE idUsers = ?', idUser, (error, results) => {
         if (error) {
           reject(error);
         } else {
@@ -113,7 +113,6 @@ const User = {
         throw error;
     }
 },
-
   getPasswordToken: (email) => {
     return new Promise((resolve, reject) => {
       const passwordTokenExpiration = crypto.getPasswordTokenExpiration();
@@ -126,7 +125,20 @@ const User = {
         }
       });
     });
-  }
+  },
+  getAllUsers: () => {
+    return new Promise((resolve, reject) => {
+        const connection = db();
+        connection.query('SELECT idUsers, name, email, role FROM users', (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results.length === 0 ? null : results);
+            }
+        });
+    });
+  },
+
 };
 
 module.exports = User;
