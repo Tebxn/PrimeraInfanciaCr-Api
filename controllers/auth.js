@@ -64,6 +64,22 @@ exports.getMe = async (req, res, next) => {
     }
 };
 
+// @desc    Log user out / clear cookie
+// @route   GET /api/v1/auth/logout
+// @access  Private
+exports.logOut = async (req, res, next) => {
+    try {
+        res.cookie('token', 'none', {
+            expires: new Date(Date.now() + 10 * 1000),
+            httpOnly: true
+        });
+        res.status(200).json({ success: true});
+    } catch (error) {
+        console.error('Error logging out ' + error);
+        return res.status(500).json({ success: false, error: 'Server error' });
+    }
+};
+
 // @desc    Forgot Password
 // @route   GET /api/v1/auth/forgotpassword
 // @access  Public
