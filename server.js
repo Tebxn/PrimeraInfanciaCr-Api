@@ -2,10 +2,12 @@ const express = require('express');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 const colors = require('colors');
+const helmet = require('helmet');
+const xss = require('xss-clean');
 const cookieParser=require('cookie-parser');
 const errorHandler = require('./middleware/error');
 const connectDB = require('./config/db');
-const helmet = require('helmet');
+
 
 
 // Load env vars
@@ -39,6 +41,9 @@ app.use(morgan('dev'));
 
 // Set security headers
 app.use(helmet());
+
+// Prevent XSS attacks
+app.use(xss());
 
 // Mount routes
 app.use('/api/v1/resources', resources);
