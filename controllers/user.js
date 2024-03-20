@@ -51,3 +51,33 @@ exports.getSingleUser = async (req, res, next) => {
         return res.status(500).json({ success: false, error: 'Server error' });
     }
 };
+
+// @desc    Update User
+// @route   PUT /api/v1/user/:id
+// @access  Private
+exports.updateUser = async (req, res, next) => {
+    try {
+        const userId = req.params.id;
+        const userData = req.body;
+        const user = await User.updateUser(userId, userData); 
+        res.status(200).json({ success: true, data: userData });
+    } catch (error) {
+        console.error('Error updating user: ' + error);
+        return res.status(500).json({ success: false, error: 'Server error' });
+    }
+};
+
+// @desc    Disable - enable user
+// @route   PUT /api/v1/user/changeStatus/:id
+// @access  Private
+exports.changeStatus = async (req, res, next) => {
+    try {
+        const userId = req.params.id;
+        await User.changeStatus(userId); 
+        res.status(200).json({ success: true, message: 'User status changed successfully' });
+    } catch (error) {
+        console.error('Error changing status of user: ' + error);
+        return res.status(500).json({ success: false, error: 'Server error' });
+    }
+};
+

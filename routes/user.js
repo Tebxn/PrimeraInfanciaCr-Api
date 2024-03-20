@@ -2,7 +2,9 @@ const express = require('express');
 const {
     updatePassword,
     getAllUsers,
-    getSingleUser
+    getSingleUser,
+    updateUser,
+    changeStatus
 } = require('../controllers/user');
 
 const router = express.Router();
@@ -13,8 +15,11 @@ router.route('/')
     .put(protect,authorize(1, 2),updatePassword);
 
 router.get('/getAllUsers', getAllUsers);
+router.put('/changeStatus/:id', changeStatus);
 router.route('/:id')
-    .get(getSingleUser);
+    .get(getSingleUser)
+    .put(updateUser);
+
 
 
 

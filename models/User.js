@@ -21,7 +21,7 @@ const User = {
   login: (email, password) => {
     return new Promise((resolve, reject) => {
       const connection = db();
-      connection.query('SELECT idUsers, name, email, password, role FROM users WHERE email = ?', email, async (error, results) => {
+      connection.query('SELECT idUsers, name, email, password, role, isActive FROM users WHERE email = ?', email, async (error, results) => {
         if (error) {
           reject(error);
         } else {
@@ -48,7 +48,7 @@ const User = {
   findById: (idUser) => {
     return new Promise((resolve, reject) => {
       const connection = db();
-      connection.query('SELECT idUsers, name, email, role FROM users WHERE idUsers = ?', idUser, (error, results) => {
+      connection.query('SELECT idUsers, name, email, role, isActive FROM users WHERE idUsers = ?', idUser, (error, results) => {
         if (error) {
           reject(error);
         } else {
@@ -129,7 +129,7 @@ const User = {
   getAllUsers: () => {
     return new Promise((resolve, reject) => {
         const connection = db();
-        connection.query('SELECT idUsers, name, email, role FROM users', (error, results) => {
+        connection.query('SELECT idUsers, name, email, role, isActive FROM users', (error, results) => {
             if (error) {
                 reject(error);
             } else {
@@ -138,6 +138,30 @@ const User = {
         });
     });
   },
+  updateUser: (idUser, data) => {
+    return new Promise((resolve, reject) => {
+        const connection = db();
+        connection.query('UPDATE users SET name = ?, email = ?, role = ? WHERE idUsers = ?', [data.name, data.email, data.role, idUser],(error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results.affectedRows === 0 ? null : results);
+            }
+        });
+    });
+  },
+  changeStatus: (idUser) => {
+    return new Promise((resolve, reject) => {
+        const connection = db();
+        connection.query('UPDATE users SET isActive = CASE WHEN isActive = true THEN false ELSE true END WHERE idUsers = ?', idUser, (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results.affectedRows === 0 ? null : results);
+            }
+        });
+    });
+}
 
 };
 
