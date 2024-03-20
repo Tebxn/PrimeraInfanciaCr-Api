@@ -5,6 +5,7 @@ const colors = require('colors');
 const cookieParser=require('cookie-parser');
 const errorHandler = require('./middleware/error');
 const connectDB = require('./config/db');
+const helmet = require('helmet');
 
 
 // Load env vars
@@ -33,6 +34,11 @@ app.use(cookieParser());
 
 // Dev logging middleware
 app.use(morgan('dev'));
+
+// Sanitize data
+
+// Set security headers
+app.use(helmet());
 
 // Mount routes
 app.use('/api/v1/resources', resources);
