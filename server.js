@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
+const cors = require('cors');
 const cookieParser=require('cookie-parser');
 const errorHandler = require('./middleware/error');
 const connectDB = require('./config/db');
@@ -45,7 +46,7 @@ app.use(morgan('dev'));
 app.use(helmet());
 
 // Prevent XSS attacks
-app.use(xss());
+//app.use(xss());
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -57,6 +58,12 @@ app.use(limiter);
 
 // Prevent http param pollution
 app.use(hpp());
+
+// Enable CORS
+app.use(cors());
+
+// Define la ruta para servir archivos estáticos desde el directorio 'public'
+app.use(express.static('public'));
 
 // Mount routes
 app.use('/api/v1/resources', resources);
