@@ -4,6 +4,8 @@ const morgan = require('morgan');
 const colors = require('colors');
 const helmet = require('helmet');
 const xss = require('xss-clean');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
 const cookieParser=require('cookie-parser');
 const errorHandler = require('./middleware/error');
 const connectDB = require('./config/db');
@@ -44,6 +46,17 @@ app.use(helmet());
 
 // Prevent XSS attacks
 app.use(xss());
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 10 * 60 * 1000, //10 mins
+    max: 100
+});
+
+app.use(limiter);
+
+// Prevent http param pollution
+app.use(hpp());
 
 // Mount routes
 app.use('/api/v1/resources', resources);
